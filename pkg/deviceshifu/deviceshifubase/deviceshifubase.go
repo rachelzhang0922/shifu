@@ -61,6 +61,7 @@ const (
 	DevuceInstructionTimeoutURIQueryStr      string = "timeout"
 	DeviceDefaultGolbalTimeoutInSeconds      int    = 3
 	DefaultHTTPServerTimeoutInSeconds        int    = 0
+	PythonHandlersModuleName                        = "handlers"
 )
 
 var (

@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/edgenesis/shifu/pkg/deviceshifu/utils"
 	"io"
 	"log"
 	"net/http"
@@ -39,7 +40,8 @@ type CommandlineHandlerMetadata struct {
 }
 
 var (
-	instructionSettings *deviceshifubase.DeviceShifuInstructionSettings
+	instructionSettings      *deviceshifubase.DeviceShifuInstructionSettings
+	customInstructionsPython map[string]struct{}
 )
 
 //New This function creates a new Device Shifu based on the configuration
@@ -68,6 +70,9 @@ func New(deviceShifuMetadata *deviceshifubase.DeviceShifuMetaData) (*DeviceShifu
 			return nil, errors.New("defaultTimeout configuration error")
 		}
 
+		for _, customInstruction := range base.DeviceShifuConfig.CustomInstructionsPython {
+			customInstructionsPython[customInstruction] = struct{}{}
+		}
 		// switch for different Shifu Protocols
 		switch protocol := *base.EdgeDevice.Spec.Protocol; protocol {
 		case v1alpha1.ProtocolHTTP:
@@ -227,10 +232,24 @@ func (handler DeviceCommandHandlerHTTP) commandHandleFunc() http.HandlerFunc {
 		if resp != nil {
 			deviceshifubase.CopyHeader(w.Header(), resp.Header)
 			w.WriteHeader(resp.StatusCode)
-			_, err := io.Copy(w, resp.Body)
-			if err != nil {
-				log.Println("error when copy requestBody from responseBody, err: ", err)
+			//_, copyErr := io.Copy(w, resp.Body)
+			//if copyErr != nil {
+			//	log.Println("error when copy requestBody from responseBody, err: ", err)
+			//}
+			respBody, readErr := io.ReadAll(resp.Body)
+			if readErr != nil {
+				log.Println("error when read requestBody from responseBody, err: ", readErr)
 			}
+
+			respBodyString := string(respBody)
+			_, shouldUseCustomProcessing := customInstructionsPython[handlerInstruction]
+			if shouldUseCustomProcessing {
+				processedBodyString := utils.ProcessInstruction(deviceshifubase.PythonHandlersModuleName, handlerInstruction, respBodyString)
+				io.WriteString(w, processedBodyString)
+			} else {
+				io.WriteString(w, respBodyString)
+			}
+
 			return
 		}
 

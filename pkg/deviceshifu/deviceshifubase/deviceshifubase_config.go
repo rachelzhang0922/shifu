@@ -18,9 +18,10 @@ import (
 
 // DeviceShifuConfig data under Configmap, Settings of deviceShifu
 type DeviceShifuConfig struct {
-	DriverProperties DeviceShifuDriverProperties
-	Instructions     DeviceShifuInstructions
-	Telemetries      *DeviceShifuTelemetries
+	DriverProperties         DeviceShifuDriverProperties
+	Instructions             DeviceShifuInstructions
+	Telemetries              *DeviceShifuTelemetries
+	CustomInstructionsPython []string `yaml:"customInstructionsPython"`
 }
 
 // DeviceShifuDriverProperties properties of deviceshifuDriver
