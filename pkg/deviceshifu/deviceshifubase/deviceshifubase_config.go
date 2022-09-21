@@ -21,7 +21,7 @@ type DeviceShifuConfig struct {
 	DriverProperties         DeviceShifuDriverProperties
 	Instructions             DeviceShifuInstructions
 	Telemetries              *DeviceShifuTelemetries
-	CustomInstructionsPython []string `yaml:"customInstructionsPython"`
+	CustomInstructionsPython map[string]string `yaml:"customInstructionsPython"`
 }
 
 // DeviceShifuDriverProperties properties of deviceshifuDriver
@@ -132,6 +132,15 @@ func NewDeviceShifuConfig(path string) (*DeviceShifuConfig, error) {
 			return nil, err
 		}
 	}
+
+	if customInstructionsPython, ok := cfg[ConfigmapCustomizedInstructionsStr]; ok {
+		err = yaml.Unmarshal([]byte(customInstructionsPython), &dsc.CustomInstructionsPython)
+		if err != nil {
+			log.Fatalf("Error parsing %v from ConfigMap, error: %v", ConfigmapCustomizedInstructionsStr, err)
+			return nil, err
+		}
+	}
+
 	return dsc, nil
 }
 

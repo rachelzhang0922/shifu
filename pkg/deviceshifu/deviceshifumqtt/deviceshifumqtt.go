@@ -3,6 +3,7 @@ package deviceshifumqtt
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/edgenesis/shifu/pkg/deviceshifu/utils"
 	"log"
 	"net/http"
 	"strings"
@@ -35,6 +36,7 @@ const (
 var (
 	mqttMessageStr              string
 	mqttMessageReceiveTimestamp time.Time
+	customInstructionsPython    map[string]string
 )
 
 // New new MQTT Deviceshifu
@@ -60,6 +62,9 @@ func New(deviceShifuMetadata *deviceshifubase.DeviceShifuMetaData) (*DeviceShifu
 			} else {
 				mqttServerAddress = *mqttSetting.MQTTServerAddress
 			}
+			customInstructionsPython = base.DeviceShifuConfig.CustomInstructionsPython
+			log.Printf("configed custom topic: %v\n", base.DeviceShifuConfig.CustomInstructionsPython)
+			log.Printf("read custom topic: %v\n", customInstructionsPython)
 
 			opts := mqtt.NewClientOptions()
 			opts.AddBroker(fmt.Sprintf("tcp://%s", mqttServerAddress))
@@ -92,7 +97,15 @@ func New(deviceShifuMetadata *deviceshifubase.DeviceShifuMetaData) (*DeviceShifu
 
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 	log.Printf("Received message: %v from topic: %v\n", msg.Payload(), msg.Topic())
-	mqttMessageStr = string(msg.Payload())
+	rawMqttMessageStr := string(msg.Payload())
+	_, shouldUsePythonCustomProcessing := customInstructionsPython[msg.Topic()]
+	log.Printf("Topic %v is custom: %v\n", msg.Topic(), shouldUsePythonCustomProcessing)
+	if shouldUsePythonCustomProcessing {
+		log.Printf("Topic %v has a python customized handler configured.\n", msg.Topic())
+		mqttMessageStr = utils.ProcessInstruction(deviceshifubase.PythonHandlersModuleName, msg.Topic(), rawMqttMessageStr)
+	} else {
+		mqttMessageStr = rawMqttMessageStr
+	}
 	mqttMessageReceiveTimestamp = time.Now()
 	log.Print("MESSAGE_STR updated")
 }

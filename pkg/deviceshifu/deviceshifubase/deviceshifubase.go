@@ -44,6 +44,7 @@ const (
 	ConfigmapDriverPropertiesStr                    = "driverProperties"
 	ConfigmapInstructionsStr                        = "instructions"
 	ConfigmapTelemetriesStr                         = "telemetries"
+	ConfigmapCustomizedInstructionsStr              = "customInstructionsPython"
 	EdgedeviceResourceStr                           = "edgedevices"
 	TelemetryCollectionServiceResourceStr           = "telemetryservices"
 	DeviceTelemetryTimeoutInMS               int64  = 3000
@@ -61,7 +62,7 @@ const (
 	DevuceInstructionTimeoutURIQueryStr      string = "timeout"
 	DeviceDefaultGolbalTimeoutInSeconds      int    = 3
 	DefaultHTTPServerTimeoutInSeconds        int    = 0
-	PythonHandlersModuleName                        = "handlers"
+	PythonHandlersModuleName                        = "customized_handlers"
 )
 
 var (

@@ -8,12 +8,16 @@ data:
   driverProperties: |
     driverSku: Hello World
     driverImage: helloworld-device:v0.0.1
+
+  customInstructionsPython: |
+    humidity:
 #    available instructions
   instructions: |
     instructionSettings:
       defaultTimeoutSeconds: 8
     instructions:
       hello:
+      humidity:
 #    telemetry retrieval methods
 #    in this example, a device_health telemetry is collected by calling hello instruction every 1 second
   telemetries: |

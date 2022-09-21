@@ -20,9 +20,13 @@ ARG TARGETARCH
 
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -a -o /output/deviceshifu cmd/deviceshifu/cmdmqtt/main.go
 
-FROM gcr.io/distroless/static-debian11
+FROM python:3.6-slim-stretch
+CMD ["/bin/python"]
+
+FROM gcr.io/distroless/python3-debian11
 WORKDIR /
 COPY --from=builder /output/deviceshifu deviceshifu
+COPY --from=builder /shifu/pkg/deviceshifu/python_customized_handlers/ python_customized_handlers/
 
 # Command to run the executable
 USER 65532:65532

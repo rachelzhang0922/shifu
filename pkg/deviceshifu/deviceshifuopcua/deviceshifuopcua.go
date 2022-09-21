@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/edgenesis/shifu/pkg/deviceshifu/utils"
 	"log"
 	"net/http"
 	"path"
@@ -35,6 +36,8 @@ const (
 	EdgedeviceStatusFail           bool   = false
 )
 
+var customInstructionsPython map[string]string
+
 // New This function creates a new Device Shifu based on the configuration
 func New(deviceShifuMetadata *deviceshifubase.DeviceShifuMetaData) (*DeviceShifu, error) {
 	if deviceShifuMetadata.Namespace == "" {
@@ -53,6 +56,10 @@ func New(deviceShifuMetadata *deviceshifubase.DeviceShifuMetaData) (*DeviceShifu
 	var opcuaClient *opcua.Client
 
 	if deviceShifuMetadata.KubeConfigPath != deviceshifubase.DeviceKubeconfigDoNotLoadStr {
+		customInstructionsPython = base.DeviceShifuConfig.CustomInstructionsPython
+		log.Printf("configed custom instruction: %v\n", base.DeviceShifuConfig.CustomInstructionsPython)
+		log.Printf("read custom instruction: %v\n", customInstructionsPython)
+
 		// switch for different Shifu Protocols
 		switch protocol := *base.EdgeDevice.Spec.Protocol; protocol {
 		case v1alpha1.ProtocolOPCUA:
@@ -172,6 +179,8 @@ func (handler DeviceCommandHandlerOPCUA) commandHandleFunc() http.HandlerFunc {
 		defer cancel()
 
 		resp, err := handler.client.ReadWithContext(ctx, req)
+		handlerInstruction := handler.HandlerMetaData.instruction
+
 		if err != nil {
 			http.Error(w, "Failed to read message from Server, error: "+err.Error(), http.StatusBadRequest)
 			log.Printf("Read failed: %s", err)
@@ -189,7 +198,16 @@ func (handler DeviceCommandHandlerOPCUA) commandHandleFunc() http.HandlerFunc {
 		w.WriteHeader(http.StatusOK)
 		// TODO: Should handle different type of return values and return JSON/other data
 		// types instead of plain text
-		fmt.Fprintf(w, "%v", resp.Results[0].Value.Value())
+		rawRespBody := resp.Results[0].Value.Value()
+		rawRespBodyString := fmt.Sprintf("%v", rawRespBody)
+		respString := rawRespBodyString
+		_, shouldUsePythonCustomProcessing := customInstructionsPython[handlerInstruction]
+		log.Printf("Instruction %v is custom: %v\n", handlerInstruction, shouldUsePythonCustomProcessing)
+		if shouldUsePythonCustomProcessing {
+			log.Printf("Instruction %v has a python customized handler configured.\n", handlerInstruction)
+			respString = utils.ProcessInstruction(deviceshifubase.PythonHandlersModuleName, handlerInstruction, rawRespBodyString)
+		}
+		fmt.Fprintf(w, "%v", respString)
 	}
 }
 
