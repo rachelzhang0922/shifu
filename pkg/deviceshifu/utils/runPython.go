@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	SCRIPTDIR = "python_customized_handlers"
+	SCRIPTDIR = "pythoncustomizedhandlers"
 	PYTHON    = "python"
 	CMDARG    = "-c"
 )

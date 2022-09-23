@@ -20,7 +20,6 @@ def humidity(raw_data):
     new_data = []
     # raw_loaded = json.load(raw_data)
     # translate the raw data to new data
-
     entities = raw_data["entity"]
     for i in range(len(entities)):
         new_data_entry = {"code": entities[i]["deviceId"],

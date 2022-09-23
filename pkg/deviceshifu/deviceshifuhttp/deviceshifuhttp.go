@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/edgenesis/shifu/pkg/deviceshifu/utils"
 	"io"
+	"k8s.io/klog/v2"
 	"log"
 	"net/http"
 	"strconv"
@@ -71,8 +72,8 @@ func New(deviceShifuMetadata *deviceshifubase.DeviceShifuMetaData) (*DeviceShifu
 		}
 
 		customInstructionsPython = base.DeviceShifuConfig.CustomInstructionsPython
-		log.Printf("configed custom instruction: %v\n", base.DeviceShifuConfig.CustomInstructionsPython)
-		log.Printf("read custom instruction: %v\n", customInstructionsPython)
+		klog.Infof("configured custom instruction: %v\n", base.DeviceShifuConfig.CustomInstructionsPython)
+		klog.Infof("read custom instruction: %v\n", customInstructionsPython)
 		// switch for different Shifu Protocols
 		switch protocol := *base.EdgeDevice.Spec.Protocol; protocol {
 		case v1alpha1.ProtocolHTTP:
@@ -240,9 +241,9 @@ func (handler DeviceCommandHandlerHTTP) commandHandleFunc() http.HandlerFunc {
 			rawRespBodyString := string(respBody)
 			_, shouldUsePythonCustomProcessing := customInstructionsPython[handlerInstruction]
 			respBodyString := rawRespBodyString
-			log.Printf("Instruction %v is custom: %v\n", handlerInstruction, shouldUsePythonCustomProcessing)
+			klog.Infof("Instruction %v is custom: %v\n", handlerInstruction, shouldUsePythonCustomProcessing)
 			if shouldUsePythonCustomProcessing {
-				log.Printf("Instruction %v has a python customized handler configured.\n", handlerInstruction)
+				klog.Infof("Instruction %v has a python customized handler configured.\n", handlerInstruction)
 				respBodyString = utils.ProcessInstruction(deviceshifubase.PythonHandlersModuleName, handlerInstruction, rawRespBodyString)
 			}
 			io.WriteString(w, respBodyString)
@@ -329,10 +330,26 @@ func (handler DeviceCommandHandlerHTTPCommandline) commandHandleFunc() http.Hand
 		if resp != nil {
 			deviceshifubase.CopyHeader(w.Header(), resp.Header)
 			w.WriteHeader(resp.StatusCode)
-			_, err := io.Copy(w, resp.Body)
-			if err != nil {
-				log.Println("cannot copy requestBody from requestBody, error: ", err)
+			//_, err := io.Copy(w, resp.Body)
+			//if err != nil {
+			//	log.Println("cannot copy requestBody from requestBody, error: ", err)
+			//}
+			//return
+
+			respBody, readErr := io.ReadAll(resp.Body)
+			if readErr != nil {
+				log.Println("error when read requestBody from responseBody, err: ", readErr)
 			}
+
+			rawRespBodyString := string(respBody)
+			_, shouldUsePythonCustomProcessing := customInstructionsPython[handlerInstruction]
+			respBodyString := rawRespBodyString
+			klog.Infof("Instruction %v is custom: %v\n", handlerInstruction, shouldUsePythonCustomProcessing)
+			if shouldUsePythonCustomProcessing {
+				klog.Infof("Instruction %v has a python customized handler configured.\n", handlerInstruction)
+				respBodyString = utils.ProcessInstruction(deviceshifubase.PythonHandlersModuleName, handlerInstruction, rawRespBodyString)
+			}
+			io.WriteString(w, respBodyString)
 			return
 		}
 

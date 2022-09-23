@@ -26,7 +26,7 @@ CMD ["/bin/python"]
 FROM gcr.io/distroless/python3-debian11
 WORKDIR /
 COPY --from=builder /output/deviceshifu deviceshifu
-COPY --from=builder /shifu/pkg/deviceshifu/python_customized_handlers/ python_customized_handlers/
+COPY --from=builder /shifu/pkg/deviceshifu/pythoncustomizedhandlers/ pythoncustomizedhandlers/
 
 # Command to run the executable
 USER 65532:65532

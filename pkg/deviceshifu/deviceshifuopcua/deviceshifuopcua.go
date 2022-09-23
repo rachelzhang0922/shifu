@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"github.com/edgenesis/shifu/pkg/deviceshifu/utils"
+	"k8s.io/klog/v2"
 	"log"
 	"net/http"
 	"path"
@@ -57,8 +58,8 @@ func New(deviceShifuMetadata *deviceshifubase.DeviceShifuMetaData) (*DeviceShifu
 
 	if deviceShifuMetadata.KubeConfigPath != deviceshifubase.DeviceKubeconfigDoNotLoadStr {
 		customInstructionsPython = base.DeviceShifuConfig.CustomInstructionsPython
-		log.Printf("configed custom instruction: %v\n", base.DeviceShifuConfig.CustomInstructionsPython)
-		log.Printf("read custom instruction: %v\n", customInstructionsPython)
+		klog.Infof("configed custom instruction: %v\n", base.DeviceShifuConfig.CustomInstructionsPython)
+		klog.Infof("read custom instruction: %v\n", customInstructionsPython)
 
 		// switch for different Shifu Protocols
 		switch protocol := *base.EdgeDevice.Spec.Protocol; protocol {
@@ -202,9 +203,9 @@ func (handler DeviceCommandHandlerOPCUA) commandHandleFunc() http.HandlerFunc {
 		rawRespBodyString := fmt.Sprintf("%v", rawRespBody)
 		respString := rawRespBodyString
 		_, shouldUsePythonCustomProcessing := customInstructionsPython[handlerInstruction]
-		log.Printf("Instruction %v is custom: %v\n", handlerInstruction, shouldUsePythonCustomProcessing)
+		klog.Infof("Instruction %v is custom: %v\n", handlerInstruction, shouldUsePythonCustomProcessing)
 		if shouldUsePythonCustomProcessing {
-			log.Printf("Instruction %v has a python customized handler configured.\n", handlerInstruction)
+			klog.Infof("Instruction %v has a python customized handler configured.\n", handlerInstruction)
 			respString = utils.ProcessInstruction(deviceshifubase.PythonHandlersModuleName, handlerInstruction, rawRespBodyString)
 		}
 		fmt.Fprintf(w, "%v", respString)
